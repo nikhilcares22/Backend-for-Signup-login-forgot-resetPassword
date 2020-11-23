@@ -126,54 +126,85 @@ module.exports = {
           subject: "Node.js Password Reset",
           text:
             "You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n" +
-            "Please copy the token :\n\n" +
+            "Please click on the link :\n\n" +
+            'http://' + req.hostname + ':' + req.socket.localPort + '/users/resetPassword/'
+            +
             token +
             "\n\n" +
             "If you did not request this, please ignore this email and your password will remain unchanged.\n",
         };
 
-        mailer(req, res, mailOptions);
-        // var options = {
-        //   service: 'gmail',
-        //   host: 'smtp.gmail.com',
-        //   auth: {
-        //     user: config.default.email,
-        //     pass: config.default.pass,
-        //   },
-        // };
-
-        // var transporter = nodemailer.createTransport(smtpTransport(options));
-
-
-
-
-        // transporter.sendMail(mailOptions, (err, info) => {
-        //   console.log("here");
-        //   if (!err) {
-        //     let message =
-        //       "An email has been sent to the user having email " + user.email;
-        //     console.log(message);
-        //     // console.log(info);
-        //     res.status(200).json({
-        //       success: c.SUCCESS,
-        //       message: message,
-        //     });
-        //   } else {
-        //     console.log(err);
-        //     return res.status(500).json({
-        //       success: c.FALSE,
-        //       message: c.EMAILFAILED,
-        //     });
-        //   }
-        //   done(err, "done");
-        // });
+        mailer(mailOptions)
+          .then(info => {
+            let emails = ''
+            info.accepted.forEach(email => {
+              emails += `${email}, `
+            });
+            let message =
+              "An email has been sent to the user having email " + emails;
+            res.status(200).json({
+              success: c.TRUE,
+              message: message
+            })
+          })
+          .catch(err => {
+            // console.log(err);
+            return res.status(500).json({
+              success: c.FALSE,
+              message: c.EMAILFAILED,
+            });
+          });
       },
     ]);
   },
 
-  resetPassword: async function (req, res) {
+  resetPasswordForm: async function (req, res) {
+
     let token = req.params.token;
-    console.log(token);
+    // console.log(token);
+    let foundUser = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+    // console.log(foundUser);
+    if (!foundUser) {
+      return res.status(404).json({
+        success: c.FALSE,
+        message: c.TOKENEXP,
+      });
+    } else {
+      req.user = foundUser;
+      res.render('resetForm');
+
+    }
+
+    // let { password, confirmPassword } = req.body;
+    // if (!password == confirmPassword) {
+    //   return res.status(401).json({
+    //     success: c.FALSE,
+    //     message: c.PASSWORDMISMATCH,
+    //   });
+    // }
+
+    // foundUser.password = password;
+    // foundUser.resetPasswordToken = undefined;
+    // foundUser.resetPasswordExpires = undefined;
+
+    // let updatedUser = await foundUser.save();
+
+    // // console.log(updatedUser);
+    // res.status(202).json({
+    //   success: c.SUCCESS,
+
+    //   message: `${c.PASSWORDCHANGED} for ${updatedUser.email}`,
+    //   email: `email has been sent confirming your password has been changed`,
+    // });
+
+  },
+
+  resetPasswordRoute: async function (req, res) {
+    let token = req.params.token;
+    // console.log(token);
     let foundUser = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() },
@@ -199,13 +230,21 @@ module.exports = {
     foundUser.resetPasswordExpires = undefined;
 
     let updatedUser = await foundUser.save();
+    let mailOptions = {
+      to: foundUser.email,
+      from: "nikhil",
+      subject: "password changed successfully",
+      text:
+        "This mail is confirming that You have successfully changed your password",
+    };
+
+    mailer(mailOptions)
 
     // console.log(updatedUser);
     res.status(202).json({
       success: c.SUCCESS,
-
       message: `${c.PASSWORDCHANGED} for ${updatedUser.email}`,
       email: `email has been sent confirming your password has been changed`,
     });
-  },
+  }
 };
