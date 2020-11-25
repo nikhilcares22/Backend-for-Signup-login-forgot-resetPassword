@@ -14,10 +14,13 @@ const userSchema = mongoose.Schema({
     trim: true,
     // unique: 1,
   },
+  phone: {
+    type: String,
+    required: true
+  },
   password: {
     type: String,
-    required: true,
-    // minlength: 8,
+    // required: true,
   },
   resetPasswordToken: {
     type: String,
@@ -25,9 +28,25 @@ const userSchema = mongoose.Schema({
   resetPasswordExpires: {
     type: Date,
   },
-  //   token: {
-  //     type: String,
-  //   },
+  verificationType: {
+    type: String,
+    enum: ['email', 'phone']
+
+  },
+  verificationToken: {
+    type: String,
+  },
+  verificationExpires: {
+    type: Date,
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  isSocialLogin: {
+    type: Boolean,
+    default: false
+  },
 });
 
 userSchema.pre("save", async function (next) {

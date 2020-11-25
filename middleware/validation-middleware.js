@@ -6,6 +6,7 @@ module.exports = {
     const validateRule = {
       username: "required|string",
       email: "required|email",
+      phone: "required|string|size:10",
       password: "required|string|min:4",
     };
 
@@ -24,8 +25,9 @@ module.exports = {
 
   login: (req, res, next) => {
     const validateRule = {
-      email: "required|email",
+      email: "required_without:phone|email",
       password: "required|string|min:4",
+      phone: "required_without:email|string|size:10",
     };
 
     validator(req.body, validateRule, {}, (err, status) => {

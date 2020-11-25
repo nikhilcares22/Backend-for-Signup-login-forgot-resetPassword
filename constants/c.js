@@ -6,8 +6,12 @@ module.exports = {
   SUCCESS: "Succesful",
   MISSING: "Could not find the user",
   ALREADYEXISTS: "User already exists",
-  EMAILFAILED: "Failed to sent email",
+  EMAILSENT: `Email/SMS sent successfully`,
+  EMAILSMSFAILED: "Failed to sent email or SMS",
   TOKENEXP: "Token expired",
+  TOKENINV: "Invalid Token ",
   PASSWORDMISMATCH: `Password mismatch`,
   PASSWORDCHANGED: `Password changed successfully`,
+  SERVERERR: `Server error`,
+  VERIFIEDSUCCESS: `Verified successfully`
 };
