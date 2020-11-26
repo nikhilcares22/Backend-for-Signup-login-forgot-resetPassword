@@ -20,4 +20,6 @@ router.post("/resetPassword/:token", userControllers.resetPasswordRoute);
 
 router.post("/forgotPassword", userControllers.forgotPassword);
 
+router.post("/resendVerification", userControllers.resendVerification);
+
 module.exports = router;

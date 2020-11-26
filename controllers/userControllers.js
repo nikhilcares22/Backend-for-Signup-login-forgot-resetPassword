@@ -1,6 +1,6 @@
 const User = require("../Models/user");
 const c = require("../constants/c");
-const tokens = require("../utils/jwt");
+const tokens = require("../utils/tokens");
 var async = require("async");
 var crypto = require("crypto");
 const config = require("../config/config");
@@ -194,9 +194,12 @@ module.exports = {
 
   login: async function (req, res) {
     try {
-      let { email, password } = req.body;
+      let { email, password, phone } = req.body;
       console.log("email and password are ", email, password);
-      let foundUser = await User.findOne({ email: email });
+      let foundUser = await User.findOne({
+        $or: [{ email: email },
+        { phone: phone }]
+      });
       // console.log(foundUser);
       if (foundUser == null)
         return res.status(404).json({
@@ -207,8 +210,9 @@ module.exports = {
       let result = await foundUser.comparePassword(password);
 
       // console.log(result);
+
       if (result) {
-        let token = await encryptToken(foundUser);
+        let token = await tokens.encryptToken(foundUser);
         // console.log(token);
 
         res.status(200).json({
@@ -364,4 +368,96 @@ module.exports = {
       email: `email has been sent confirming your password has been changed`,
     });
   },
+
+  resendVerification: async function (req, res) {
+    try {
+      let { verificationType, email, phone } = req.body;
+
+      if (verificationType == 'email') {
+        let foundUser = await User.findOne({ email: email });
+
+        if (!foundUser) return res.status(404).json({
+          success: c.FALSE,
+          message: c.MISSING
+        });
+
+        console.log('=======verification by email=======');
+
+        let verificationToken = await tokens.generateVerifyToken();
+
+        let mailOptions = {
+          to: foundUser.email,
+          from: "nikhil",
+          subject: "Resend Verification",
+          text:
+            "This is the reverification email that you are receiving .\n\n" +
+            "Please verify by licking on the link below\n\n" +
+            "http://" +
+            req.hostname +
+            ":" +
+            req.socket.localPort +
+            "/users/verifyByEmail?token=" +
+            verificationToken +
+            "\n\n" +
+            "If you did not request this, please ignore this email .\n",
+        };
+        let success = await mailer(mailOptions);
+        if (success.accepted != []) {
+          foundUser.verificationType = 'email';
+          foundUser.verificationToken = verificationToken;
+          foundUser.verificationExpires = Date.now() + 3600000;
+
+          await foundUser.save();
+          console.log('====done====');
+          return res.status(200).json({
+            status: c.TRUE,
+            message: c.EMAILSENT
+          });
+        }
+        res.status(400).json({
+          status: c.FALSE,
+          message: c.EMAILSMSFAILED
+        });
+      }
+      else if (verificationType == 'phone') {
+        let foundUser = await User.findOne({ phone: phone });
+        if (!foundUser) return res.status(404).json({
+          success: c.FALSE,
+          message: c.MISSING
+        });
+
+        console.log('=======verification by phone=======');
+        let verificationToken = await tokens.generateOTP();
+        console.log('verificationToken=======', verificationToken);
+        let data = {
+          body: `The following is the Generated OTP \n\n\n${verificationToken}\n\nDo not share this to OTP with anyone.
+          Enter this OTP into the following url to verify your account.
+          \n\n`+
+            `http://${req.hostname}:8080/users/verifyByPhone`,
+          from: '+16504190743',
+          to: '+91' + foundUser.phone
+        };
+        let success = await twilio(data);
+        console.log('successsss', success);
+        if (success.body != '') return res.status(200).json({
+          success: c.TRUE,
+          message: c.EMAILSENT
+        });
+
+        if (success.status == 400) {
+          res.status(400).json({
+            status: c.FALSE,
+            message: c.EMAILSMSFAILED
+          });
+        }
+      }
+
+    } catch (error) {
+      return res.status(500).json({
+        status: c.FALSE,
+        message: c.SERVERERR
+      });
+    }
+
+  }
 };

@@ -9,7 +9,7 @@ module.exports = function (data) {
             })
             .catch(err => {
                 console.log(err);
+                reject(err);
             });
-
     });
 };

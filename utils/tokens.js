@@ -1,9 +1,5 @@
 const jwt = require("jsonwebtoken");
 const config = require("../config/config");
-const user = require("../Models/user");
-const { response } = require("express");
-const { resolve } = require("path");
-const { reject } = require("async");
 
 module.exports = {
   encryptToken: function (user) {
