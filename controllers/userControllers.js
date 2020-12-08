@@ -28,6 +28,7 @@ module.exports = {
           phone: phone,
         });
 
+
         let success;
         let verificationToken;
 
@@ -118,10 +119,22 @@ module.exports = {
           });
         }
       } else {
-        res.status(200).json({
-          success: c.FALSE,
-          message: c.ALREADYEXISTS,
-        });
+        if (foundUser.email == email && foundUser.phone == phone) {
+          res.status(208).json({
+            success: c.FALSE,
+            message: c.ALREADYEXISTS,
+          });
+        } else if (foundUser.email == email) {
+          res.status(208).json({
+            success: c.FALSE,
+            message: c.ALREADYEXISTSWITHEMAIl,
+          });
+        } else if (foundUser.phone == phone) {
+          res.status(208).json({
+            success: c.FALSE,
+            message: c.ALREADYEXISTSWITHPHONE,
+          });
+        }
       }
     } catch (error) {
       console.log(error);
